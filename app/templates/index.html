@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Run an incident drill</h1>
+<form method="post" action="/incidents" class="grid">
+  <div class="field"><label for="scenario">Scenario</label>
+    <select id="scenario" name="scenario">
+      {% for key, s in scenarios.items() %}<option value="{{ key }}"{% if values.get("scenario") == key %} selected{% endif %}>{{ s.title }}</option>{% endfor %}
+    </select>
+    {% if errors.get("scenario") %}<p class="err">{{ errors["scenario"] }}</p>{% endif %}</div>
+  {% for key, label in [("duration", "Simulation length (minutes)"), ("fault_at", "Fault starts at minute"), ("mitigate_after", "Minutes until mitigation"), ("seed", "Random seed")] %}
+  <div class="field"><label for="{{ key }}">{{ label }}</label>
+    <input id="{{ key }}" name="{{ key }}" type="number" value="{{ values.get(key, '') }}"{% if errors.get(key) %} aria-invalid="true"{% endif %}>
+    {% if errors.get(key) %}<p class="err">{{ errors[key] }}</p>{% endif %}</div>
+  {% endfor %}
+  <div class="field"><button class="primary">Run drill</button></div>
+</form>
+<h2>Past drills</h2>
+{% if incidents %}
+<div class="scroll"><table>
+  <thead><tr><th>Run</th><th>Scenario</th><th class="num">Detect (min)</th><th class="num">Resolve (min)</th><th class="num">Budget used</th></tr></thead>
+  <tbody>
+  {% for i in incidents %}
+    <tr><td><a href="/incidents/{{ i.id }}">#{{ i.id }} {{ i.created_at.strftime('%Y-%m-%d %H:%M') }} UTC</a></td>
+        <td>{{ scenarios[i.scenario].title }}</td>
+        <td class="num">{{ i.summary.time_to_detect if i.summary.time_to_detect is not none else "none" }}</td>
+        <td class="num">{{ i.summary.time_to_resolve if i.summary.time_to_resolve is not none else "open" }}</td>
+        <td class="num">{{ i.summary.budget_used_pct }}%</td></tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+{% else %}
+<p class="empty">No drills yet. Pick a scenario above and click Run drill.</p>
+{% endif %}
+{% endblock %}

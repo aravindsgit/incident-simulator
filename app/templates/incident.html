@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}{{ spec.title }} · Incident Simulator{% endblock %}
+{% block content %}
+<p><a href="/">All drills</a></p>
+<div class="bar"><h1>#{{ incident.id }} {{ spec.title }} <span class="badge">{{ severity }}</span></h1>
+  <form method="post" action="/incidents/{{ incident.id }}/delete" onsubmit="return confirm('Delete this drill?')"><button class="danger">Delete</button></form></div>
+{% if message %}<p class="flash" role="status">{{ message }}</p>{% endif %}
+<div class="cards">
+  <div class="card"><span>Time to detect</span><b>{{ summary.time_to_detect if summary.time_to_detect is not none else "none" }} min</b></div>
+  <div class="card"><span>Time to mitigate</span><b>{{ summary.time_to_mitigate if summary.time_to_mitigate is not none else "n/a" }} min</b></div>
+  <div class="card"><span>Time to resolve</span><b>{{ summary.time_to_resolve if summary.time_to_resolve is not none else "open" }} min</b></div>
+  <div class="card"><span>Peak error rate</span><b>{{ summary.peak_error_pct }}%</b></div>
+  <div class="card"><span>Failed requests</span><b>{{ "{:,}".format(summary.failed_requests) }}</b></div>
+  <div class="card"><span>Error budget used</span><b>{{ summary.budget_used_pct }}%</b></div>
+</div>
+{{ error_chart|safe }}
+{{ latency_chart|safe }}
+<h2>Timeline (simulated time)</h2>
+<ul class="timeline">{% for e in events %}<li class="{{ e.kind }}"><b>{{ e.clock }}</b> {{ e.text }}</li>{% endfor %}</ul>
+<h2>Your notes</h2>
+<p class="meta">Fill these in as the responder. The draft below rebuilds from them. Describe systems and decisions, not people.</p>
+<form method="post" action="/incidents/{{ incident.id }}/notes">
+  {% for key, label in [("cause", "Root cause: what changed or failed?"), ("actions_taken", "What we did to fix it"), ("went_well", "What went well"), ("went_poorly", "What went poorly")] %}
+  <div class="field"><label for="{{ key }}">{{ label }}</label><textarea id="{{ key }}" name="{{ key }}" rows="3">{{ incident.notes.get(key, "") }}</textarea></div>
+  {% endfor %}
+  <button class="primary">Save notes and rebuild draft</button>
+</form>
+<h2>Postmortem draft</h2>
+<p><a class="button" href="/incidents/{{ incident.id }}/postmortem.md?version=draft">Download draft (.md)</a></p>
+<pre class="doc">{{ incident.draft_md }}</pre>
+<h2>AI-polished version</h2>
+{% if incident.polished_md %}
+<p><a class="button" href="/incidents/{{ incident.id }}/postmortem.md">Download polished (.md)</a></p>
+<pre class="doc">{{ incident.polished_md }}</pre>
+{% endif %}
+<form method="post" action="/incidents/{{ incident.id }}/polish">
+  <button{% if not llm_ready %} title="Set ANTHROPIC_API_KEY to enable"{% endif %}>{{ "Polish again with AI" if incident.polished_md else "Polish with AI" }}</button>
+  {% if not llm_ready %}<span class="meta">Optional. Needs an ANTHROPIC_API_KEY.</span>{% endif %}
+</form>
+{% endblock %}
