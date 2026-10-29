@@ -16,3 +16,9 @@ blameless postmortem draft. An optional AI step polishes the draft using only th
 ## Deploy (Render + Neon)
 Set ENV=production, DATABASE_URL, APP_USERNAME and APP_PASSWORD (12+ characters). Optional: ANTHROPIC_API_KEY
 and LLM_MODEL. See render.yaml. Health check: /health.
+
+## Screenshot
+
+![Incident drill](docs/drill.png)
+
+Live demo is behind a login.
